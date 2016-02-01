@@ -1,0 +1,26 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="backgroundColor">#782</item>
+        <item name="textColor">#777</item>
+    </style>
+
+    <!-- 默认 -->
+    <style name="ThemeDefault" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="backgroundColor">#fff</item>
+        <item name="textColor">#000000</item>
+    </style>
+
+    <!-- 夜间 -->
+    <style name="ThemeNight" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="backgroundColor">@color/textColor</item>
+        <item name="textColor">@color/color_selector</item>
+    </style>
+
+</resources>
