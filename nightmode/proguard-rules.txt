@@ -1,0 +1,10 @@
+-keep class im.quar.nightmode.** { *; }
+-keep class **$$ModeChanger { *; }
+
+-keepclasseswithmembernames class * {
+    @im.quar.nightmode.* <fields>;
+}
+
+-keepclasseswithmembernames class * {
+    @im.quar.nightmode.* <methods>;
+}

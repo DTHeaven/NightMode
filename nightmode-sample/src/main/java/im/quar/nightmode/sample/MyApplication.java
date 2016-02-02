@@ -2,8 +2,6 @@ package im.quar.nightmode.sample;
 
 import android.app.Application;
 
-import com.squareup.leakcanary.LeakCanary;
-
 import im.quar.nightmode.Configuration;
 import im.quar.nightmode.MultiThemePolicy;
 import im.quar.nightmode.NightModeManager;
@@ -16,7 +14,6 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        LeakCanary.install(this);
 
         NightModeManager.init(this, new Configuration.Builder()
                 .setChanger(new AnimatorChanger())
