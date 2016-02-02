@@ -5,9 +5,11 @@ import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeName;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +22,9 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -29,12 +33,18 @@ import javax.lang.model.util.Elements;
 import im.quar.nightmode.MultiBackground;
 import im.quar.nightmode.MultiTextColor;
 
+import static javax.lang.model.element.ElementKind.CLASS;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.STATIC;
+import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.NOTE;
 
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class NightModeProcessor extends AbstractProcessor {
 
+    private static final String VIEW_TYPE = "android.view.View";
+    private static final String TEXT_VIEW_TYPE = "android.widget.TextView";
     private static final String MODE_CHANGER_SUFFIX = "$$ModeChanger";
 
     private Messager mMessager;
@@ -59,10 +69,8 @@ public class NightModeProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        info("process...........");
         Map<TypeElement, BindingClass> targetClassMap = findAndParseTargets(roundEnv);
 
-        info("brew............");
         Iterator<BindingClass> iterator = targetClassMap.values().iterator();
         while (iterator.hasNext()) {
             try {
@@ -70,21 +78,13 @@ public class NightModeProcessor extends AbstractProcessor {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//            info(iterator.next().brewJava());
         }
-
-        info("brew end........");
-//        for (Element element : roundEnv.getElementsAnnotatedWith(MultiTextColor.class)) {
-//            //TODO Only for generate error.
-//            TypeElement error = (TypeElement) element;
-//        }
 
         return true;
     }
 
     private Map<TypeElement, BindingClass> findAndParseTargets(RoundEnvironment env) {
         Map<TypeElement, BindingClass> targetClassMap = new LinkedHashMap<>();
-        Set<String> erasedTargetNames = new LinkedHashSet<>();
 
         for (Element element : env.getElementsAnnotatedWith(MultiTextColor.class)) {
             if (!SuperficialValidation.validateElement(element)) continue;
@@ -100,139 +100,65 @@ public class NightModeProcessor extends AbstractProcessor {
     }
 
     private void parseTextColorElement(Element element, Map<TypeElement, BindingClass> targetClassMap) {
-        info("element:" + element.toString());
-        info("enclosing:" + element.getEnclosingElement());
+        // Verify common generated code restrictions.
+        if (isInaccessibleViaGeneratedCode(MultiTextColor.class, "fields", element)
+                || isBindingInWrongPackage(MultiTextColor.class, element)) {
+            return;
+        }
+
         TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
 
-        // Verify that the target type extends from ViewGroup.
+        // Verify that the target type extends from TextView.
         TypeMirror elementType = element.asType();
         if (elementType.getKind() == TypeKind.TYPEVAR) {
             TypeVariable typeVariable = (TypeVariable) elementType;
             elementType = typeVariable.getUpperBound();
         }
 
-//        if (!isSubtypeOfType(elementType, VIEW_GROUP)) {
-//            error(element, "@%s fields must extend from ViewGroup. (%s)",
-//                    annotationClass.getSimpleName(), enclosingElement.getQualifiedName());
-//        }
-
-        String field = element.getSimpleName().toString();
-        String canonicalName = enclosingElement.getQualifiedName().toString();
-
-//        String superCanonicalName = ((TypeElement) element).getSuperclass().toString();
-//        String superName = superCanonicalName.substring(superCanonicalName.lastIndexOf('.') + 1);
-//
-//        if (superCanonicalName.startsWith("android.widget.")) {
-//            superCanonicalName = superCanonicalName.substring(superCanonicalName.lastIndexOf('.') + 1);
-//        }
-
-
-        int[] values = element.getAnnotation(MultiTextColor.class).value();
-//        int[] themes = element.getAnnotation(MultiTextColor.class).theme();
-        for (int value : values) {
-            info("value:" + value);
+        if (!isSubtypeOfType(elementType, TEXT_VIEW_TYPE)) {
+            error(element, "@%s fields must extend from TextView. (%s.%s)",
+                    MultiTextColor.class.getSimpleName(), enclosingElement.getQualifiedName(), element.getSimpleName());
         }
 
-        info("filed:" + field);
-        info("enclosing:" + canonicalName);
+        int[] values = element.getAnnotation(MultiTextColor.class).value();
 
         BindingClass bindingClass = targetClassMap.get(enclosingElement);
-        if (bindingClass != null) {
-//            ViewBindings viewBindings = bindingClass.getViewBinding(id);
-//            if (viewBindings != null) {
-//                Iterator<FieldViewBinding> iterator = viewBindings.getFieldBindings().iterator();
-//                if (iterator.hasNext()) {
-//                    FieldViewBinding existingBinding = iterator.next();
-//                    error(element, "Attempt to use @%s for an already bound ID %d on '%s'. (%s.%s)",
-//                            Bind.class.getSimpleName(), id, existingBinding.getName(),
-//                            enclosingElement.getQualifiedName(), element.getSimpleName());
-//                    return;
-//                }
-//            }
-        } else {
+        if (bindingClass == null) {
             bindingClass = getOrCreateTargetClass(targetClassMap, enclosingElement);
         }
 
         String name = element.getSimpleName().toString();
         TypeName type = TypeName.get(elementType);
-//        boolean required = isFieldRequired(element);
 
         FieldBinding binding = new FieldBinding(name, type, values);
         bindingClass.addTextViewField(binding);
-
-//        FieldViewBinding binding = new FieldViewBinding(name, type, required);
-//        bindingClass.addTextViewField(id, binding);
-//        // Add the type-erased version to the valid binding targets set.
-//        erasedTargetNames.add(enclosingElement.toString());
-
-        //BindClass -- Map<TypeElement, BindingClass> targetClassMap
-
-        //enclosing name
-
-        //backgrounds field, values[], themes[]
-        //textColors field, values[], themes[]
-
-//        info("superName:" + superName);
-//        info("superCanonicalName:" + superCanonicalName);
-//        ParsedInfo info = new ParsedInfo();
-//        info.name = name;
-//        info.canonicalName = canonicalName;
-//        info.superName = superName;
-//        info.superCanonicalName = superCanonicalName;
-//        infos.add(info);
-
     }
 
     private void parseBackgroundElement(Element element, Map<TypeElement, BindingClass> targetClassMap) {
-        info("element:" + element.toString());
-        info("enclosing:" + element.getEnclosingElement());
+        // Verify common generated code restrictions.
+        if (isInaccessibleViaGeneratedCode(MultiBackground.class, "fields", element)
+                || isBindingInWrongPackage(MultiBackground.class, element)) {
+            return;
+        }
+
         TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
 
-        // Verify that the target type extends from ViewGroup.
+        // Verify that the target type extends from View.
         TypeMirror elementType = element.asType();
         if (elementType.getKind() == TypeKind.TYPEVAR) {
             TypeVariable typeVariable = (TypeVariable) elementType;
             elementType = typeVariable.getUpperBound();
         }
 
-//        if (!isSubtypeOfType(elementType, VIEW_GROUP)) {
-//            error(element, "@%s fields must extend from ViewGroup. (%s)",
-//                    annotationClass.getSimpleName(), enclosingElement.getQualifiedName());
-//        }
-
-        String field = element.getSimpleName().toString();
-        String canonicalName = enclosingElement.getQualifiedName().toString();
-
-//        String superCanonicalName = ((TypeElement) element).getSuperclass().toString();
-//        String superName = superCanonicalName.substring(superCanonicalName.lastIndexOf('.') + 1);
-//
-//        if (superCanonicalName.startsWith("android.widget.")) {
-//            superCanonicalName = superCanonicalName.substring(superCanonicalName.lastIndexOf('.') + 1);
-//        }
-
-
-        int[] values = element.getAnnotation(MultiBackground.class).value();
-        for (int value : values) {
-            info("value:" + value);
+        if (!isSubtypeOfType(elementType, VIEW_TYPE)) {
+            error(element, "@%s fields must extend from View. (%s.%s)",
+                    MultiBackground.class.getSimpleName(), enclosingElement.getQualifiedName(), element.getSimpleName());
         }
 
-        info("filed:" + field);
-        info("enclosing:" + canonicalName);
+        int[] values = element.getAnnotation(MultiBackground.class).value();
 
         BindingClass bindingClass = targetClassMap.get(enclosingElement);
-        if (bindingClass != null) {
-//            ViewBindings viewBindings = bindingClass.getViewBinding(id);
-//            if (viewBindings != null) {
-//                Iterator<FieldViewBinding> iterator = viewBindings.getFieldBindings().iterator();
-//                if (iterator.hasNext()) {
-//                    FieldViewBinding existingBinding = iterator.next();
-//                    error(element, "Attempt to use @%s for an already bound ID %d on '%s'. (%s.%s)",
-//                            Bind.class.getSimpleName(), id, existingBinding.getName(),
-//                            enclosingElement.getQualifiedName(), element.getSimpleName());
-//                    return;
-//                }
-//            }
-        } else {
+        if (bindingClass == null) {
             bindingClass = getOrCreateTargetClass(targetClassMap, enclosingElement);
         }
 
@@ -257,6 +183,98 @@ public class NightModeProcessor extends AbstractProcessor {
         return bindingClass;
     }
 
+    private boolean isInaccessibleViaGeneratedCode(Class<? extends Annotation> annotationClass,
+                                                   String targetThing, Element element) {
+        boolean hasError = false;
+        TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
+
+        // Verify method modifiers.
+        Set<Modifier> modifiers = element.getModifiers();
+        if (modifiers.contains(PRIVATE) || modifiers.contains(STATIC)) {
+            error(element, "@%s %s must not be private or static. (%s.%s)",
+                    annotationClass.getSimpleName(), targetThing, enclosingElement.getQualifiedName(),
+                    element.getSimpleName());
+            hasError = true;
+        }
+
+        // Verify containing type.
+        if (enclosingElement.getKind() != CLASS) {
+            error(enclosingElement, "@%s %s may only be contained in classes. (%s.%s)",
+                    annotationClass.getSimpleName(), targetThing, enclosingElement.getQualifiedName(),
+                    element.getSimpleName());
+            hasError = true;
+        }
+
+        // Verify containing class visibility is not private.
+        if (enclosingElement.getModifiers().contains(PRIVATE)) {
+            error(enclosingElement, "@%s %s may not be contained in private classes. (%s.%s)",
+                    annotationClass.getSimpleName(), targetThing, enclosingElement.getQualifiedName(),
+                    element.getSimpleName());
+            hasError = true;
+        }
+
+        return hasError;
+    }
+
+    private boolean isBindingInWrongPackage(Class<? extends Annotation> annotationClass,
+                                            Element element) {
+        TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
+        String qualifiedName = enclosingElement.getQualifiedName().toString();
+
+        if (qualifiedName.startsWith("android.")) {
+            error(element, "@%s-annotated class incorrectly in Android framework package. (%s)",
+                    annotationClass.getSimpleName(), qualifiedName);
+            return true;
+        }
+        if (qualifiedName.startsWith("java.")) {
+            error(element, "@%s-annotated class incorrectly in Java framework package. (%s)",
+                    annotationClass.getSimpleName(), qualifiedName);
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isSubtypeOfType(TypeMirror typeMirror, String otherType) {
+        if (otherType.equals(typeMirror.toString())) {
+            return true;
+        }
+        if (typeMirror.getKind() != TypeKind.DECLARED) {
+            return false;
+        }
+        DeclaredType declaredType = (DeclaredType) typeMirror;
+        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+        if (typeArguments.size() > 0) {
+            StringBuilder typeString = new StringBuilder(declaredType.asElement().toString());
+            typeString.append('<');
+            for (int i = 0; i < typeArguments.size(); i++) {
+                if (i > 0) {
+                    typeString.append(',');
+                }
+                typeString.append('?');
+            }
+            typeString.append('>');
+            if (typeString.toString().equals(otherType)) {
+                return true;
+            }
+        }
+        Element element = declaredType.asElement();
+        if (!(element instanceof TypeElement)) {
+            return false;
+        }
+        TypeElement typeElement = (TypeElement) element;
+        TypeMirror superType = typeElement.getSuperclass();
+        if (isSubtypeOfType(superType, otherType)) {
+            return true;
+        }
+        for (TypeMirror interfaceType : typeElement.getInterfaces()) {
+            if (isSubtypeOfType(interfaceType, otherType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String getPackageName(TypeElement type) {
         return elementUtils.getPackageOf(type).getQualifiedName().toString();
     }
@@ -268,5 +286,13 @@ public class NightModeProcessor extends AbstractProcessor {
 
     private void info(String s) {
         mMessager.printMessage(NOTE, s);
+    }
+
+    private void error(Element element, String message, Object... args) {
+        if (args.length > 0) {
+            message = String.format(message, args);
+        }
+
+        mMessager.printMessage(ERROR, message, element);
     }
 }

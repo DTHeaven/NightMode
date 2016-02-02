@@ -3,6 +3,7 @@ package im.quar.nightmode;
 import android.support.annotation.StyleRes;
 
 import im.quar.nightmode.changer.Changer;
+import im.quar.nightmode.changer.DefaultChanger;
 
 /**
  * Created by DTHeaven on 16/1/31.

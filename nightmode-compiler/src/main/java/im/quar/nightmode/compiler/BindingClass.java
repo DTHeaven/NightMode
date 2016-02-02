@@ -49,7 +49,7 @@ final class BindingClass {
                 .addMethod(createBindMethod());
 
         return JavaFile.builder(classPackage, result.build())
-                .addFileComment("Generated code from Night Mode. Do not modify!")
+                .addFileComment("Generated code from Night Mode Manager. Do not modify!")
                 .build();
     }
 

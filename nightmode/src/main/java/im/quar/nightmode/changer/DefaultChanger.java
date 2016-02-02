@@ -1,11 +1,9 @@
-package im.quar.nightmode;
+package im.quar.nightmode.changer;
 
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.TextView;
-
-import im.quar.nightmode.changer.AbsChanger;
 
 /**
  * Created by DTHeaven on 16/1/25.
