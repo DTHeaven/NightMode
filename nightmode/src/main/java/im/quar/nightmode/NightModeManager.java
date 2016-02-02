@@ -15,12 +15,9 @@ import android.view.View;
 
 import java.lang.ref.WeakReference;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 
 import im.quar.nightmode.changer.Changer;
@@ -32,7 +29,7 @@ import im.quar.nightmode.utils.SharePrefHelper;
 public class NightModeManager {
 
     private static final String TAG = "NightModeManager";
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static final int DAY_MODE = 0;
     public static final int NIGHT_MODE = 1;
@@ -43,14 +40,8 @@ public class NightModeManager {
     private static final String CURRENT_MODE = "current_mode";
     private static SharePrefHelper sSharePrefHelper;
 
-    //以activity为单位添加set，set中包含activity下bind(object)对象，
-    // unbind对象时清除相应对象，unbind activity时清空activity下所有元素
-    //activity onCreate()中bind，添加set，destroy中unbind，移除set
-    //set中object与CHANGERS中对象对应，当前activity下set与CURRENT对应
-    //CHANGERS中key为object's class, value为注解生成的changers（每个bind生成对应changer，changer是否需要与instance对应，而不是class？）
-    private static final Stack<Map<Integer, WeakReference<Object>>> STACK = new Stack<>();
-    private static final Map<Integer, Set<Integer>> FRAGMENT_BINDER = new HashMap<>();//Fragment.hashCode(), set(target.hashCode())
-
+    //Value object may be WeakReference<Object> or LinkedHashSet<Integer, WeakReference<Object>> for fragment.
+    private static final Stack<Map<Integer, Object>> STACK = new Stack<>();
     private static final Map<Class<?>, ModeChanger<Object>> MODE_CHANGERS = new LinkedHashMap<>();
 
     private static Context sContext;
@@ -96,10 +87,12 @@ public class NightModeManager {
      * @param target
      */
     public static void bind(@NonNull Activity target) {
-        Log.i(TAG, "bind activity:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "bind activity:" + target);
+        }
 
         //Bind activity时视为进入下一页
-        Map<Integer, WeakReference<Object>> newPageMap = new LinkedHashMap<>();
+        Map<Integer, Object> newPageMap = new LinkedHashMap<>();
         newPageMap.put(target.hashCode(), new WeakReference<Object>(target));
         STACK.push(newPageMap);
         bindChanger(target);
@@ -110,27 +103,29 @@ public class NightModeManager {
     }
 
     public static void unbind(@NonNull Activity target) {
-        Log.i(TAG, "unbind activity:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "unbind activity:" + target);
+        }
 
         if (STACK.isEmpty()) {
-            Log.w(TAG, "STACK isEmpty...");
-            dump();
+            Log.w(TAG, "STACK is empty...");
+
+            if (DEBUG) {
+                dump();
+            }
             return;
         }
 
-        //unbind activity时视为返回上一页面
-        Map<Integer, WeakReference<Object>> topMap = STACK.pop();
-        if (topMap.containsKey(target.hashCode())) {
-            removeFragmentBinder(topMap);
-        } else {
-            Log.w(TAG, "Some thing was wrong when unbind, did you forget to call unbind when finish last activity?");
+        //back to last page.
+        Map<Integer, Object> topMap = STACK.pop();
+        if (!topMap.containsKey(target.hashCode())) {//Find target and remove all elements above it.
+//            Log.w(TAG, "Some thing was wrong when unbind, did you forget to call unbind when finish last activity?");
             int key = target.hashCode();
             int size = STACK.size();
             for (int i = size - 1; i >= 0; i--) {
-                if (STACK.elementAt(i).containsKey(key)) {//Remove every object above target.
+                if (STACK.elementAt(i).containsKey(key)) {//Remove every element above target.
                     for (int j = size - 1; j >= i; j--) {
-                        Map<Integer, WeakReference<Object>> map = STACK.pop();
-                        removeFragmentBinder(map);
+                        STACK.pop();
                     }
 
                     if (DEBUG) {
@@ -151,14 +146,19 @@ public class NightModeManager {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static void bind(@NonNull Fragment target) {
-        Log.i(TAG, "bind fragment:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "bind fragment:" + target);
+        }
+
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
-        topMap.put(target.hashCode(), new WeakReference<Object>(target));
+        Map<Integer, Object> topMap = STACK.peek();
+        LinkedHashMap<Integer, WeakReference<Object>> map = new LinkedHashMap<>();
+        map.put(target.hashCode(), new WeakReference<Object>(target));
+        topMap.put(target.hashCode(), map);
         bindChanger(target);
 
         if (DEBUG) {
@@ -168,16 +168,17 @@ public class NightModeManager {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static void unbind(@NonNull Fragment target) {
-        Log.i(TAG, "unbind fragment:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "unbind fragment:" + target);
+        }
 
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
+        Map<Integer, Object> topMap = STACK.peek();
         topMap.remove(target.hashCode());
-        removeTargetsByFragment(target.hashCode(), topMap);
 
         if (DEBUG) {
             dump();
@@ -185,14 +186,19 @@ public class NightModeManager {
     }
 
     public static void bind(@NonNull android.support.v4.app.Fragment target) {
-        Log.i(TAG, "bind fragment:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "bind fragment:" + target);
+        }
+
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
-        topMap.put(target.hashCode(), new WeakReference<Object>(target));
+        Map<Integer, Object> topMap = STACK.peek();
+        LinkedHashMap<Integer, WeakReference<Object>> map = new LinkedHashMap<>();
+        map.put(target.hashCode(), new WeakReference<Object>(target));
+        topMap.put(target.hashCode(), map);
         bindChanger(target);
 
         if (DEBUG) {
@@ -201,16 +207,17 @@ public class NightModeManager {
     }
 
     public static void unbind(@NonNull android.support.v4.app.Fragment target) {
-        Log.i(TAG, "unbind fragment:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "unbind fragment:" + target);
+        }
 
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
+        Map<Integer, Object> topMap = STACK.peek();
         topMap.remove(target.hashCode());
-        removeTargetsByFragment(target.hashCode(), topMap);
 
         if (DEBUG) {
             dump();
@@ -218,13 +225,16 @@ public class NightModeManager {
     }
 
     public static void bind(@NonNull Object target) {
-        Log.i(TAG, "bind:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "bind:" + target);
+        }
+
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
+        Map<Integer, Object> topMap = STACK.peek();
         topMap.put(target.hashCode(), new WeakReference<Object>(target));
         bindChanger(target);
 
@@ -234,14 +244,16 @@ public class NightModeManager {
     }
 
     public static void unbind(@NonNull Object target) {
-        Log.i(TAG, "unbind:" + target);
+        if (DEBUG) {
+            Log.i(TAG, "unbind:" + target);
+        }
 
         if (STACK.isEmpty()) {
             Log.w(TAG, "Must bind activity at first.");
             return;
         }
 
-        Map<Integer, WeakReference<Object>> topMap = STACK.peek();
+        Map<Integer, Object> topMap = STACK.peek();
         topMap.remove(target.hashCode());
 
         if (DEBUG) {
@@ -249,16 +261,8 @@ public class NightModeManager {
         }
     }
 
-//    public static void  bind(@NonNull View target) {
-//
-//    }
-//
-//    public static void unbind(@NonNull View target) {
-//
-//    }
-
     /**
-     * This method only works when target api is above 11(HONEYCOMB_MR1).
+     * This method only works when target api is above {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR1}.
      * @param target
      * @param source
      */
@@ -279,7 +283,7 @@ public class NightModeManager {
     }
 
     /**
-     * This method only works when target api is above 11(HONEYCOMB_MR1).
+     * This method only works when target api is above {@link android.os.Build.VERSION_CODES#HONEYCOMB_MR1}.
      * @param target
      * @param source
      */
@@ -288,69 +292,68 @@ public class NightModeManager {
     }
 
     public static void bind(@NonNull Object target, @NonNull Fragment parentFragment) {
-        bindInternal(target, parentFragment);
+        bindToFragment(target, parentFragment);
     }
 
     public static void unbind(@NonNull Object target, @Nullable Fragment parentFragment) {
-        unbindInternal(target, parentFragment);
+        unbindFromFragment(target, parentFragment);
     }
 
     public static void bind(@NonNull Object target, @Nullable android.support.v4.app.Fragment parentFragment) {
-        bindInternal(target, parentFragment);
+        bindToFragment(target, parentFragment);
     }
 
     public static void unbind(@NonNull Object target, @Nullable android.support.v4.app.Fragment parentFragment) {
-        unbindInternal(target, parentFragment);
+        unbindFromFragment(target, parentFragment);
     }
 
-    private static void bindInternal(@NonNull Object target, @Nullable Object parentFragment) {
-        bind(target);
-        if (parentFragment != null) {
-            attachToFragment(target.hashCode(), parentFragment.hashCode());
-        }
-    }
-
-    private static void unbindInternal(@NonNull Object target, @Nullable Object parentFragment) {
-        unbind(target);
-        if (parentFragment != null) {
-            detachFromFragment(target.hashCode(), parentFragment.hashCode());
-        }
-    }
-
-    private static void attachToFragment(int targetHashCode, int fragmentHashCode) {
-        Set<Integer> set = FRAGMENT_BINDER.get(fragmentHashCode);
-        if (set == null) {
-            set = new HashSet<>();
-            FRAGMENT_BINDER.put(fragmentHashCode, set);
-        }
-        set.add(targetHashCode);
-    }
-
-    private static void detachFromFragment(int targetHashCode, int fragmentHashCode) {
-        Set<Integer> set = FRAGMENT_BINDER.get(fragmentHashCode);
-        if (set != null) {
-            set.remove(targetHashCode);
-        }
-    }
-
-    private static void removeTargetsByFragment(int fragmentHashCode, Map<Integer, WeakReference<Object>> topMap) {
-        Set<Integer> set = FRAGMENT_BINDER.get(fragmentHashCode);
-        if (set != null) {
-            Iterator<Integer> iterator =  set.iterator();
-            while (iterator.hasNext()) {
-                topMap.remove(iterator.next());
+    private static void bindToFragment(@NonNull Object target, @Nullable Object parentFragment) {
+        if (parentFragment == null) {
+            bind(target);
+        } else {
+            if (DEBUG) {
+                Log.i(TAG, "bind to fragment:" + target);
             }
-            FRAGMENT_BINDER.remove(fragmentHashCode);
+
+            if (STACK.isEmpty()) {
+                Log.w(TAG, "Must bind activity at first.");
+                return;
+            }
+
+            Map<Integer, Object> topMap = STACK.peek();
+            Object map = topMap.get(parentFragment.hashCode());
+            if (map instanceof Map) {
+                ((Map) map).put(target.hashCode(), new WeakReference<Object>(target));
+            }
+            bindChanger(target);
+
+            if (DEBUG) {
+                dump();
+            }
         }
     }
 
-    private static void removeFragmentBinder(Map<Integer, WeakReference<Object>> topMap) {
-        Iterator<WeakReference<Object>> iterator = topMap.values().iterator();
-        while (iterator.hasNext()) {
-            Object target = iterator.next().get();
-            if (target != null) {
-                unbind(target);
-//                FRAGMENT_BINDER.remove(target.hashCode());
+    private static void unbindFromFragment(@NonNull Object target, @Nullable Object parentFragment) {
+        if (parentFragment == null) {
+            unbind(target);
+        } else {
+            if (DEBUG) {
+                Log.i(TAG, "unbind from fragment:" + target);
+            }
+
+            if (STACK.isEmpty()) {
+                Log.w(TAG, "Must bind activity at first.");
+                return;
+            }
+
+            Map<Integer, Object> topMap = STACK.peek();
+            Object map = topMap.get(parentFragment.hashCode());
+            if (map instanceof Map) {
+                ((Map) map).remove(target.hashCode());
+            }
+
+            if (DEBUG) {
+                dump();
             }
         }
     }
@@ -376,21 +379,6 @@ public class NightModeManager {
      */
     public static void updateCurrent(Object target) {
         updateTargetMode(target, sCurMode, false);
-    }
-
-    private static void dump() {
-        Iterator<Map<Integer, WeakReference<Object>>> iterator = STACK.iterator();
-        while (iterator.hasNext()) {
-            Log.i(TAG, "NewPage---------------------------");
-            Map<Integer, WeakReference<Object>> map = iterator.next();
-            Iterator<WeakReference<Object>> valuesIterator =  map.values().iterator();
-            while (valuesIterator.hasNext()) {
-                WeakReference<Object> target = valuesIterator.next();
-                Log.i(TAG, "target:" + target.get());
-            }
-        }
-
-        Log.i(TAG, "FragmentBinders:" + FRAGMENT_BINDER.size());
     }
 
     /**
@@ -422,7 +410,7 @@ public class NightModeManager {
         }
 
         for (int i = STACK.size() - 1; i >= 0; i--) {//From top to bottom.
-            Collection<WeakReference<Object>> set = STACK.get(i).values();
+            Collection<Object> set = STACK.elementAt(i).values();
             changeElementsMode(set, mode, withAnimation);
             if (withAnimation) {//仅需在当前activity中使用动画，即stack中栈顶元素
                 withAnimation = false;
@@ -432,16 +420,22 @@ public class NightModeManager {
         sSharePrefHelper.setPref(CURRENT_MODE, sCurMode);
     }
 
-    private static void changeElementsMode(Collection<WeakReference<Object>> set, int mode, boolean withAnimation) {
-        Iterator<WeakReference<Object>> iterator = set.iterator();
+    private static void changeElementsMode(Collection<Object> set, int mode, boolean withAnimation) {
+        Iterator<Object> iterator = set.iterator();
         while (iterator.hasNext()) {
-            WeakReference<Object> elementRef = iterator.next();
-            Object element = elementRef.get();
-            if (element != null) {
-                updateTargetMode(element, mode, withAnimation);
-            } else {
-                //TODO Remove null reference
-                Log.w(TAG, "Should remove null reference...");
+            Object obj = iterator.next();
+            if (obj instanceof WeakReference) {
+                WeakReference<Object> elementRef = (WeakReference<Object>) obj;
+                Object element = elementRef.get();
+                if (element != null) {
+                    updateTargetMode(element, mode, withAnimation);
+                } else {
+                    //TODO Remove null reference
+                    Log.w(TAG, "Should remove null reference...");
+                }
+            } else if (obj instanceof Map) {
+                Map<Integer, Object> map = (Map<Integer, Object>) obj;
+                changeElementsMode(map.values(), mode, withAnimation);
             }
         }
     }
@@ -472,6 +466,29 @@ public class NightModeManager {
     private static void checkInitial() {
         if (sContext == null) {
             throw new IllegalStateException("Must initial NightModeManager before changing mode.");
+        }
+    }
+
+    private static void dump() {
+        Iterator<Map<Integer, Object>> iterator = STACK.iterator();
+        while (iterator.hasNext()) {
+            Log.i(TAG, "NewPage---------------------------");
+            Collection<Object>  set = iterator.next().values();
+            dumpElementsMode(set);
+        }
+    }
+
+    private static void dumpElementsMode(Collection<Object> set) {
+        Iterator<Object> iterator = set.iterator();
+        while (iterator.hasNext()) {
+            Object obj = iterator.next();
+            if (obj instanceof WeakReference) {
+                WeakReference<Object> elementRef = (WeakReference<Object>) obj;
+                Log.i(TAG, "target:" + elementRef.get());
+            } else if (obj instanceof Map) {
+                Map<Integer, Object> map = (Map<Integer, Object>) obj;
+                dumpElementsMode(map.values());
+            }
         }
     }
 }

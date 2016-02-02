@@ -1,6 +1,5 @@
 package im.quar.nightmode.sample;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -52,8 +51,8 @@ public class ListFragment extends Fragment {
         mChangeThemeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                NightModeManager.toggleModeWithAnimation();
-                startActivity(new Intent(getContext(), ThirdActivity.class));
+                NightModeManager.toggleModeWithAnimation();
+//                startActivity(new Intent(getContext(), ThirdActivity.class));
             }
         });
 
