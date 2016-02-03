@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         mBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 startActivity(new Intent(MainActivity.this, ListActivity.class));
 
 //                NightModeManager.toggleMode(MainActivity.this);
