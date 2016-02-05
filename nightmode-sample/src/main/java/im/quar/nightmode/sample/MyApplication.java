@@ -16,10 +16,9 @@ public class MyApplication extends Application {
 
         NightModeManager.init(this, new Configuration.Builder()
                 .setChanger(new NineOldAnimatorChanger())
+//                .setChanger(new AnimatorChanger())
                 .setMultiThemePolicy(MultiThemePolicy.MULTI_THEMES)
                 .setThemes(R.style.ThemeDefault, R.style.ThemeNight)
                 .build());
-
-        NightModeManager.correctMode(0);
     }
 }

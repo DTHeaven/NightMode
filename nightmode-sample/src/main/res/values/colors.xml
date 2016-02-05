@@ -10,4 +10,6 @@
     <color name="textColorNight">#fff</color>
     <color name="backgroundColorNight">#000</color>
 
+    <color name="btnNormal">#888</color>
+    <color name="btnPressed">#444</color>
 </resources>

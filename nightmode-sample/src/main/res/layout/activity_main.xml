@@ -13,13 +13,20 @@
     <TextView
         android:id="@+id/txt"
         android:layout_width="400dp"
-        android:layout_height="280dp"
+        android:layout_height="80dp"
         android:text="Hello World!" />
+
+    <ImageView
+        android:id="@+id/img"
+        android:layout_width="220dp"
+        android:layout_height="80dp"
+        android:src="@drawable/bg"/>
 
     <Button
         android:id="@+id/btn"
         android:layout_width="220dp"
         android:layout_height="80dp"
         android:layout_marginTop="50dp"
-        android:text="CurMode:0"/>
+        android:background="@drawable/abc_btn_default_mtrl_shape"
+        android:text="NextPage"/>
 </LinearLayout>

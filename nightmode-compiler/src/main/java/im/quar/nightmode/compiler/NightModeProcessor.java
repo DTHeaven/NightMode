@@ -31,6 +31,7 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 
 import im.quar.nightmode.MultiBackground;
+import im.quar.nightmode.MultiImageTint;
 import im.quar.nightmode.MultiTextColor;
 
 import static javax.lang.model.element.ElementKind.CLASS;
@@ -45,6 +46,7 @@ public class NightModeProcessor extends AbstractProcessor {
 
     private static final String VIEW_TYPE = "android.view.View";
     private static final String TEXT_VIEW_TYPE = "android.widget.TextView";
+    private static final String IMAGE_VIEW_TYPE = "android.widget.ImageView";
     private static final String MODE_CHANGER_SUFFIX = "$$ModeChanger";
 
     private Messager mMessager;
@@ -64,6 +66,7 @@ public class NightModeProcessor extends AbstractProcessor {
         Set<String> types = new LinkedHashSet<>();
         types.add(MultiBackground.class.getCanonicalName());
         types.add(MultiTextColor.class.getCanonicalName());
+        types.add(MultiImageTint.class.getCanonicalName());
         return types;
     }
 
@@ -94,6 +97,11 @@ public class NightModeProcessor extends AbstractProcessor {
         for (Element element : env.getElementsAnnotatedWith(MultiBackground.class)) {
             if (!SuperficialValidation.validateElement(element)) continue;
             parseBackgroundElement(element, targetClassMap);
+        }
+
+        for (Element element : env.getElementsAnnotatedWith(MultiImageTint.class)) {
+            if (!SuperficialValidation.validateElement(element)) continue;
+            parseImageTintElement(element, targetClassMap);
         }
 
         return targetClassMap;
@@ -167,6 +175,41 @@ public class NightModeProcessor extends AbstractProcessor {
 
         FieldBinding binding = new FieldBinding(name, type, values);
         bindingClass.addBackgroundField(binding);
+    }
+
+    private void parseImageTintElement(Element element, Map<TypeElement, BindingClass> targetClassMap) {
+        // Verify common generated code restrictions.
+        if (isInaccessibleViaGeneratedCode(MultiImageTint.class, "fields", element)
+                || isBindingInWrongPackage(MultiImageTint.class, element)) {
+            return;
+        }
+
+        TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
+
+        // Verify that the target type extends from View.
+        TypeMirror elementType = element.asType();
+        if (elementType.getKind() == TypeKind.TYPEVAR) {
+            TypeVariable typeVariable = (TypeVariable) elementType;
+            elementType = typeVariable.getUpperBound();
+        }
+
+        if (!isSubtypeOfType(elementType, IMAGE_VIEW_TYPE)) {
+            error(element, "@%s fields must extend from ImageView. (%s.%s)",
+                    MultiImageTint.class.getSimpleName(), enclosingElement.getQualifiedName(), element.getSimpleName());
+        }
+
+        int[] values = element.getAnnotation(MultiImageTint.class).value();
+
+        BindingClass bindingClass = targetClassMap.get(enclosingElement);
+        if (bindingClass == null) {
+            bindingClass = getOrCreateTargetClass(targetClassMap, enclosingElement);
+        }
+
+        String name = element.getSimpleName().toString();
+        TypeName type = TypeName.get(elementType);
+
+        FieldBinding binding = new FieldBinding(name, type, values);
+        bindingClass.addImageTintField(binding);
     }
 
     private BindingClass getOrCreateTargetClass(Map<TypeElement, BindingClass> targetClassMap,

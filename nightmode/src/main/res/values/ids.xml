@@ -2,4 +2,7 @@
 <resources>
     <item name="night_mode_text_color_animator" type="id"/>
     <item name="night_mode_background_animator" type="id"/>
+    <item name="night_mode_tint_animator" type="id"/>
+    <item name="night_mode_current_background_color" type="id"/>
+    <item name="night_mode_current_tint_color" type="id"/>
 </resources>

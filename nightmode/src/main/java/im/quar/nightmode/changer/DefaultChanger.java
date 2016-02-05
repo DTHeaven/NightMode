@@ -1,8 +1,10 @@
 package im.quar.nightmode.changer;
 
 import android.content.res.ColorStateList;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
@@ -23,6 +25,16 @@ public class DefaultChanger extends AbsChanger {
     @Override
     protected void animChangeBackground(View view, int fromColor, int toColor, Drawable drawable) {
         view.setBackgroundDrawable(drawable);
+    }
+
+    @Override
+    protected void changeTintColor(ImageView imageView, int color) {
+        imageView.setColorFilter(color, PorterDuff.Mode.SRC_OVER);
+    }
+
+    @Override
+    protected void animChangeTintColor(ImageView imageView, int fromColor, int toColor) {
+        imageView.setColorFilter(toColor, PorterDuff.Mode.SRC_OVER);
     }
 
     @Override

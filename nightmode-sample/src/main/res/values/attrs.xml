@@ -2,4 +2,5 @@
 <resources>
     <attr name="textColor" format="color|reference" />
     <attr name="backgroundColor" format="color|reference" />
+    <attr name="buttonBackgroundColor" format="color|reference" />
 </resources>

@@ -10,7 +10,8 @@ import im.quar.nightmode.utils.ReflectionUtil;
  */
 public class ColorDrawableCompat {
 
-    private ColorDrawableCompat() {}
+    private ColorDrawableCompat() {
+    }
 
     public static int getColor(ColorDrawable drawable) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -20,15 +21,31 @@ public class ColorDrawableCompat {
         }
     }
 
+    public static void setColor(ColorDrawable drawable, int color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            drawable.setColor(color);
+        } else {
+            setColorByReflection(drawable, color);
+        }
+    }
+
     private static int getColorByReflection(ColorDrawable drawable) {
-        Object mState = ReflectionUtil.getValue(drawable, "mState");
+        Object mState = ReflectionUtil.getFieldValue(drawable, "mState");
         if (mState != null) {
-            Object mUseColor = ReflectionUtil.getValue(mState, "mUseColor");
+            Object mUseColor = ReflectionUtil.getFieldValue(mState, "mUseColor");
             if (mUseColor != null) {
                 return (int) mUseColor;
             }
         }
 
         return 0;
+    }
+
+    private static void setColorByReflection(ColorDrawable drawable, int color) {
+        Object mState = ReflectionUtil.getFieldValue(drawable, "mState");
+        if (mState != null) {
+            ReflectionUtil.setFieldValue(mState, "mBaseColor", color);
+            ReflectionUtil.setFieldValue(mState, "mUseColor", color);
+        }
     }
 }
