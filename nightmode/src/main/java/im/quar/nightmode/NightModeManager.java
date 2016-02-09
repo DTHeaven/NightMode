@@ -91,7 +91,7 @@ public class NightModeManager {
             Log.i(TAG, "bind activity:" + target);
         }
 
-        //Bind activity时视为进入下一页
+        //Bind activity, considered as enter next page.
         Map<Integer, Object> newPageMap = new LinkedHashMap<>();
         newPageMap.put(target.hashCode(), new WeakReference<Object>(target));
         STACK.push(newPageMap);
@@ -397,26 +397,26 @@ public class NightModeManager {
         changeMode(targetMode, true);
     }
 
-    public static void changeMode(int mode) {
-        changeMode(mode, false);
+    public static void changeMode(int targetMode) {
+        changeMode(targetMode, false);
     }
 
-    public static void changeMode(int mode, boolean withAnimation) {
+    public static void changeMode(int targetMode, boolean withAnimation) {
         checkInitial();
-        sCurMode = mode;
         if (sMultiThemePolicy == MultiThemePolicy.UI_MODE) {
             //修改ui mode
-            updateUiMode(sContext, sCurMode == NIGHT_MODE);
+            updateUiMode(sContext, targetMode == NIGHT_MODE);
         }
 
         for (int i = STACK.size() - 1; i >= 0; i--) {//From top to bottom.
             Collection<Object> set = STACK.elementAt(i).values();
-            changeElementsMode(set, mode, withAnimation);
+            changeElementsMode(set, targetMode, withAnimation);
             if (withAnimation) {//仅需在当前activity中使用动画，即stack中栈顶元素
                 withAnimation = false;
             }
         }
 
+        sCurMode = targetMode;
         sSharePrefHelper.setPref(CURRENT_MODE, sCurMode);
     }
 
@@ -440,15 +440,15 @@ public class NightModeManager {
         }
     }
 
-    private static void updateTargetMode(Object target, int mode, boolean withAnimation) {
+    private static void updateTargetMode(Object target, int targetMode, boolean withAnimation) {
         if (sMultiThemePolicy == MultiThemePolicy.MULTI_THEMES) {
-            if (mode < sThemes.length && target instanceof Context) {
-                ((Context) target).setTheme(sThemes[sCurMode]);//Update every activity's theme
+            if (targetMode < sThemes.length && target instanceof Context) {
+                ((Context) target).setTheme(sThemes[targetMode]);//Update every activity's theme
             }
         }
         ModeChanger<Object> modeChanger = MODE_CHANGERS.get(target.getClass());
         if (modeChanger != null) {
-            modeChanger.change(sChanger, target, mode, withAnimation);
+            modeChanger.change(sChanger, target, targetMode, withAnimation);
         } else {
             Log.w(TAG, "Did you forget to call bind() before changing mode?");
         }

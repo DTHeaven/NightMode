@@ -23,6 +23,7 @@ final class BindingClass {
     private final ArrayList<FieldBinding> mTextViewFields = new ArrayList<>();
     private final ArrayList<FieldBinding> mBackgroundFields = new ArrayList<>();
     private final ArrayList<FieldBinding> mImageTintFields = new ArrayList<>();
+    private final ArrayList<MethodBinding> mMethods = new ArrayList<>();
 
     private final String classPackage;
     private final String className;
@@ -44,6 +45,10 @@ final class BindingClass {
 
     public void addImageTintField(FieldBinding field) {
         mImageTintFields.add(field);
+    }
+
+    public void addMethod(MethodBinding method) {
+        mMethods.add(method);
     }
 
     public JavaFile brewJava() {
@@ -84,6 +89,11 @@ final class BindingClass {
         for (FieldBinding field : mImageTintFields) {
             String values = arrayToString(field.getValues(), builder);
             result.addStatement("changer.changeImageTint(target.$N, new int[]$L, targetMode, withAnimation)", field.getName(), values);
+        }
+
+        result.addCode("\n//Listener\n");
+        for (MethodBinding method : mMethods) {
+            result.addStatement("target.$N($L)", method.getName(), method.getParameters().isEmpty() ? "" : "targetMode");
         }
 
         return result.build();
