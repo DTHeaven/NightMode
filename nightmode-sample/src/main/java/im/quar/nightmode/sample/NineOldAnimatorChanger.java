@@ -29,7 +29,7 @@ public class NineOldAnimatorChanger extends AbsChanger {
 
     @Override
     protected boolean supportAnimation() {
-        return false;
+        return true;
     }
 
     @Override

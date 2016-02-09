@@ -187,6 +187,7 @@ public abstract class AbsChanger implements Changer {
                         } else {
                             changeTintColor(imageView, sTypedValue.data);
                         }
+                        saveTintColorToTag(imageView, sTypedValue.data);//Save current color for next change.
                     } else if (TypeUtil.isColor(sTypedValue.resourceId)) {
                         changeImageTintByResId(imageView, sTypedValue.resourceId, withAnimation);
                     }

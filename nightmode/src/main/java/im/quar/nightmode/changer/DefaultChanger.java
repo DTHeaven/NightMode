@@ -2,10 +2,14 @@ package im.quar.nightmode.changer;
 
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import im.quar.nightmode.ColorDrawableCompat;
 
 /**
  * Created by DTHeaven on 16/1/25.
@@ -19,7 +23,17 @@ public class DefaultChanger extends AbsChanger {
 
     @Override
     protected void changeBackground(View view, Drawable drawable) {
-        view.setBackgroundDrawable(drawable);
+        Drawable background = view.getBackground();
+        if (background != null && drawable instanceof ColorDrawable) {
+            int color = ColorDrawableCompat.getColor((ColorDrawable) drawable);
+            if (background instanceof ColorDrawable && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                ColorDrawableCompat.setColor((ColorDrawable) background, color);
+            } else {
+                background.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+            }
+        } else {
+            view.setBackgroundDrawable(drawable);
+        }
     }
 
     @Override
