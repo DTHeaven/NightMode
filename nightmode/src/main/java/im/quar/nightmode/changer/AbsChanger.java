@@ -30,7 +30,7 @@ public abstract class AbsChanger implements Changer {
                 break;
 
             case MULTI_VALUES:
-                if (targetMode <= values.length) {
+                if (targetMode < values.length) {
                     resId = values[targetMode];
                     setBackgroundByResId(view, resId, withAnimation);
                 }
@@ -112,7 +112,7 @@ public abstract class AbsChanger implements Changer {
                 break;
 
             case MULTI_VALUES:
-                if (targetMode <= values.length) {
+                if (targetMode < values.length) {
                     resId = values[targetMode];
                     if (TypeUtil.isColor(resId)) {
                         changeTextColorByResId(textView, resId, withAnimation);
@@ -167,7 +167,7 @@ public abstract class AbsChanger implements Changer {
                 break;
 
             case MULTI_VALUES:
-                if (targetMode <= values.length) {
+                if (targetMode < values.length) {
                     resId = values[targetMode];
                     if (TypeUtil.isColor(resId)) {
                         changeImageTintByResId(imageView, resId, withAnimation);
