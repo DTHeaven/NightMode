@@ -18,6 +18,8 @@ public class MyApplication extends Application {
                 .setChanger(new NineOldAnimatorChanger())
 //                .setChanger(new AnimatorChanger())
                 .setMultiThemePolicy(MultiThemePolicy.MULTI_THEMES)
+//                .setMultiThemePolicy(MultiThemePolicy.MULTI_VALUES)
+//                .setMultiThemePolicy(MultiThemePolicy.UI_MODE)
                 .setThemes(R.style.ThemeDefault, R.style.ThemeNight)
                 .build());
     }

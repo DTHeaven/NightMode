@@ -22,16 +22,21 @@ public class MainActivity extends AppCompatActivity {
 
 //    @MultiTextColor(R.color.textColor)
 //    @MultiBackground(R.color.backgroundColor)
-//    @MultiTextColor({R.color.textColor, R.color.colorAccent})
+//    @MultiTextColor({R.color.textColor, R.color.textColorNight})
 //    @MultiBackground({R.color.backgroundColor, R.color.backgroundColorNight})
     @MultiTextColor(R.attr.textColor)
     @MultiBackground(R.attr.backgroundColor)
     TextView mText;
 
+//    @MultiTextColor(R.color.textColor)
+//    @MultiBackground(R.color.buttonBackgroundColor)
+//    @MultiTextColor({R.color.textColor, R.color.textColorNight})
+//    @MultiBackground({R.color.buttonBackgroundColor, R.color.buttonBackgroundColorNight})
     @MultiTextColor(R.attr.textColor)
     @MultiBackground(R.attr.buttonBackgroundColor)
     Button mBtn;
 
+//    @MultiImageTint({R.color.buttonBackgroundColor, R.color.buttonBackgroundColorNight})
     @MultiImageTint(R.attr.buttonBackgroundColor)
     ImageView mImg;
 

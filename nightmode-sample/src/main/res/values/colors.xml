@@ -6,9 +6,11 @@
 
     <color name="textColor">#000</color>
     <color name="backgroundColor">#fff</color>
+    <color name="buttonBackgroundColor">#00000000</color>
 
     <color name="textColorNight">#fff</color>
     <color name="backgroundColorNight">#000</color>
+    <color name="buttonBackgroundColorNight">#aa000000</color>
 
     <color name="btnNormal">#888</color>
     <color name="btnPressed">#444</color>

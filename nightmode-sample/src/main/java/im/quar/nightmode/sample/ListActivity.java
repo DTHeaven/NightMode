@@ -17,10 +17,18 @@ import im.quar.nightmode.NightModeManager;
  */
 public class ListActivity extends AppCompatActivity {
 
+//    @MultiTextColor(R.color.textColor)
+//    @MultiBackground(R.color.buttonBackgroundColor)
+//    @MultiTextColor({R.color.textColor, R.color.textColorNight})
+//    @MultiBackground({R.color.buttonBackgroundColor, R.color.buttonBackgroundColorNight})
     @MultiTextColor(R.attr.textColor)
     @MultiBackground(R.attr.buttonBackgroundColor)
     Button mListBtn;
 
+//    @MultiTextColor(R.color.textColor)
+//    @MultiBackground(R.color.buttonBackgroundColor)
+//    @MultiTextColor({R.color.textColor, R.color.textColorNight})
+//    @MultiBackground({R.color.buttonBackgroundColor, R.color.buttonBackgroundColorNight})
     @MultiTextColor(R.attr.textColor)
     @MultiBackground(R.attr.buttonBackgroundColor)
     Button mSimpleBtn;

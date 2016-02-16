@@ -50,6 +50,10 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ViewHolder> {
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
+//        @MultiTextColor(R.color.textColor)
+//        @MultiBackground(R.color.backgroundColor)
+//        @MultiTextColor({R.color.textColor, R.color.textColorNight})
+//        @MultiBackground({R.color.backgroundColor, R.color.backgroundColorNight})
         @MultiTextColor(R.attr.textColor)
         @MultiBackground(R.attr.backgroundColor)
         TextView titleTxt;

@@ -1,7 +1,5 @@
 package im.quar.nightmode.sample;
 
-import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -27,6 +25,10 @@ public class ListFragment extends Fragment {
     private RecyclerView mListRcv;
     private ListAdapter mAdapter;
 
+//    @MultiTextColor(R.color.textColor)
+//    @MultiBackground(R.color.buttonBackgroundColor)
+//    @MultiTextColor({R.color.textColor, R.color.textColorNight})
+//    @MultiBackground({R.color.buttonBackgroundColor, R.color.buttonBackgroundColorNight})
     @MultiTextColor(R.attr.textColor)
     @MultiBackground(R.attr.buttonBackgroundColor)
     Button mChangeThemeBtn;
