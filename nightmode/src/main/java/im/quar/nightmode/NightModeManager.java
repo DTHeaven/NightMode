@@ -69,13 +69,15 @@ public class NightModeManager {
     }
 
     /**
-     * Correct the current mode only when yourself mode is not matching {@link #getCurrentMode()}.
-     * @param mode
+     * Correct current mode only when {@link NightModeManager} first time used. You should call this method just after {@link #init(Context)} or {@link #init(Context, im.quar.nightmode.Configuration)}.
+     * @param preferMode Your current mode.
      */
-    public static void correctMode(int mode) {
+    public static void correctMode(int preferMode) {
         checkInitial();
-        sCurMode = mode;
-        sSharePrefHelper.setPref(CURRENT_MODE, sCurMode);
+        if (!sSharePrefHelper.hasPrefWithKey(CURRENT_MODE)) {
+            sCurMode = preferMode;
+            sSharePrefHelper.setPref(CURRENT_MODE, sCurMode);
+        }
     }
 
     public static int getCurrentMode() {
