@@ -118,24 +118,18 @@ public class NightModeManager {
 
         //back to last page.
         Map<Integer, Object> topMap = STACK.pop();
-        if (!topMap.containsKey(target.hashCode())) {//Find target and remove all elements above it.
+        if (!topMap.containsKey(target.hashCode())) {//Find target and remove.
 //            Log.w(TAG, "Some thing was wrong when unbind, did you forget to call unbind when finish last activity?");
             int key = target.hashCode();
             int size = STACK.size();
             for (int i = size - 1; i >= 0; i--) {
-                if (STACK.elementAt(i).containsKey(key)) {//Remove every element above target.
-                    for (int j = size - 1; j >= i; j--) {
-                        STACK.pop();
-                    }
-
-                    if (DEBUG) {
-                        dump();
-                    }
-                    return;
+                if (STACK.elementAt(i).containsKey(key)) {//Remove target.
+                    STACK.removeElementAt(i);
+                    break;
                 }
             }
 
-            //Not found, re-add.
+            //Re-add topMap.
             STACK.push(topMap);
         }
 
